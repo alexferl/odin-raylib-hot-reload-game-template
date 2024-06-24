@@ -17,12 +17,12 @@ import rl "vendor:raylib"
 
 PIXEL_WINDOW_HEIGHT :: 180
 
-Game_Memory :: struct {
+GameMemory :: struct {
 	player_pos: Vec2,
 	some_number: int,
 }
 
-g_mem: ^Game_Memory
+g_mem: ^GameMemory
 
 game_camera :: proc() -> rl.Camera2D {
 	w := f32(rl.GetScreenWidth())
@@ -96,9 +96,9 @@ game_init_window :: proc() {
 
 @(export)
 game_init :: proc() {
-	g_mem = new(Game_Memory)
+	g_mem = new(GameMemory)
 
-	g_mem^ = Game_Memory {
+	g_mem^ = GameMemory {
 		some_number = 100,
 	}
 
@@ -122,12 +122,12 @@ game_memory :: proc() -> rawptr {
 
 @(export)
 game_memory_size :: proc() -> int {
-	return size_of(Game_Memory)
+	return size_of(GameMemory)
 }
 
 @(export)
 game_hot_reloaded :: proc(mem: rawptr) {
-	g_mem = (^Game_Memory)(mem)
+	g_mem = (^GameMemory)(mem)
 }
 
 @(export)

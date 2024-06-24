@@ -1,7 +1,9 @@
-.PHONY: debug hot-reload release
+.PHONY: dev debug hot-reload release
 
 .DEFAULT: help
 help:
+	@echo "make dev"
+	@echo "	setup development environment"
 	@echo "make debug"
 	@echo "	run debug"
 	@echo "make hot-reload"
@@ -11,8 +13,16 @@ help:
 
 check-odin:
 ifeq (, $(shell which odin))
-	$(error "odin not in $(PATH), odin (https://odin-lang.org/) is required")
+	$(error "Odin not in $(PATH), odin (https://odin-lang.org) is required")
 endif
+
+check-pre-commit:
+ifeq (, $(shell which pre-commit))
+	$(error "pre-commit not in $(PATH), pre-commit (https://pre-commit.com) is required")
+endif
+
+dev: check-odin check-pre-commit
+	pre-commit install
 
 debug:
 	odin build main_release -out:game_debug.bin -no-bounds-check -debug && ./game_debug.bin

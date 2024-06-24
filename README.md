@@ -2,7 +2,13 @@
 
 This is an Odin + Raylib game template with hot reloading.
 
-## Setup and usage
+## Usage
+Setup the development environment first:
+```shell
+make dev
+```
+
+Build and start the game:
 ```shell
 make hot-reload
 ```

@@ -31,7 +31,7 @@ main :: proc() {
 
 	logger := logh_err == os.ERROR_NONE ? log.create_file_logger(logh) : log.create_console_logger()
 	context.logger = logger
-	
+
 	game.game_init_window()
 	game.game_init()
 
@@ -53,14 +53,14 @@ main :: proc() {
 	free_all(context.temp_allocator)
 	game.game_shutdown()
 	game.game_shutdown_window()
-	
+
 	if logh_err == os.ERROR_NONE {
 		log.destroy_file_logger(logger)
 	}
 
 	when USE_TRACKING_ALLOCATOR {
 		for key, value in tracking_allocator.allocation_map {
-			log.error("%v: Leaked %v bytes\n", value.location, value.size)
+			log.error("%v: leaked %v bytes\n", value.location, value.size)
 		}
 
 		tracking_allocator_destroy(&tracking_allocator)
