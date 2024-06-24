@@ -40,7 +40,7 @@ animation_update :: proc(a: ^Animation, dt: f32) {
 
 animation_rect :: proc(a: Animation) -> Rect {
 	if a.num_frames == 0 {
-		log.error("Animation has zero frames")
+		log.error("animation has zero frames")
 		return RECT_EMPTY
 	}
 

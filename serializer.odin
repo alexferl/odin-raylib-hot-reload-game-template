@@ -267,7 +267,7 @@ serialize_field :: proc(s: ^Serializer, key: string, v: ^$T) -> bool {
 
 	when intrinsics.type_is_union(T) {
 		if !s.is_writing && reflect.union_variant_typeid(s.cur^) == json.Integer {
-			log.warnf("Enum has become Union: Assuming enum value can be to set raw tag! Value: %v", v)
+			log.warnf("enum has become union: assuming enum value can be to set raw tag! value: %v", v)
 			ti := type_info_of(T)
 			no_nil := false
 			if u, ok := ti.variant.(reflect.Type_Info_Union); ok {
@@ -294,16 +294,16 @@ serialize_field :: proc(s: ^Serializer, key: string, v: ^$T) -> bool {
 }
 
 serialize :: proc {
-	// basics
-	serialize_int,
-	serialize_slice,
-	serialize_dynamic_array,
-	serialize_fixed_array,
-	serialize_bool,
-	serialize_float,
-	serialize_enum,
-	serialize_string,
-	serialize_rect,
+// basics
+serialize_int,
+serialize_slice,
+serialize_dynamic_array,
+serialize_fixed_array,
+serialize_bool,
+serialize_float,
+serialize_enum,
+serialize_string,
+serialize_rect,
 }
 
 @(require_results)
