@@ -19,12 +19,12 @@ DEV :: #config(DEV, false)
 
 PIXEL_WINDOW_HEIGHT :: 180
 
-GameMemory :: struct {
+Game :: struct {
 	player_pos: Vec2,
 	some_number: int,
 }
 
-g_mem: ^GameMemory
+g: ^Game
 
 game_camera :: proc() -> rl.Camera2D {
 	w := f32(rl.GetScreenWidth())
@@ -32,7 +32,7 @@ game_camera :: proc() -> rl.Camera2D {
 
 	return {
 		zoom = h/PIXEL_WINDOW_HEIGHT,
-		target = g_mem.player_pos,
+		target = g.player_pos,
 		offset = { w/2, h/2 },
 	}
 }
@@ -60,8 +60,8 @@ update :: proc() {
 	}
 
 	input = linalg.normalize0(input)
-	g_mem.player_pos += input * rl.GetFrameTime() * 100
-	g_mem.some_number += 1
+	g.player_pos += input * rl.GetFrameTime() * 100
+	g.some_number += 1
 }
 
 draw :: proc() {
@@ -69,13 +69,13 @@ draw :: proc() {
 	rl.ClearBackground(rl.BLACK)
 
 	rl.BeginMode2D(game_camera())
-	rl.DrawRectangleV(g_mem.player_pos, {10, 20}, rl.WHITE)
+	rl.DrawRectangleV(g.player_pos, {10, 20}, rl.WHITE)
 	rl.DrawRectangleV({20, 20}, {10, 10}, rl.RED)
 	rl.DrawRectangleV({-30, -20}, {10, 10}, rl.GREEN)
 	rl.EndMode2D()
 
 	rl.BeginMode2D(ui_camera())
-	rl.DrawText(fmt.ctprintf("some_number: %v\nplayer_pos: %v", g_mem.some_number, g_mem.player_pos), 5, 5, 8, rl.WHITE)
+	rl.DrawText(fmt.ctprintf("some_number: %v\nplayer_pos: %v", g.some_number, g.player_pos), 5, 5, 8, rl.WHITE)
 	rl.EndMode2D()
 
 	rl.EndDrawing()
@@ -129,18 +129,18 @@ game_init_window :: proc() {
 
 @(export)
 game_init :: proc() {
-	g_mem = new(GameMemory)
+	g = new(Game)
 
-	g_mem^ = GameMemory {
+	g^ = Game {
 		some_number = 100,
 	}
 
-	game_hot_reloaded(g_mem)
+	game_hot_reloaded(g)
 }
 
 @(export)
 game_shutdown :: proc() {
-	free(g_mem)
+	free(g)
 }
 
 @(export)
@@ -149,18 +149,18 @@ game_shutdown_window :: proc() {
 }
 
 @(export)
-game_memory :: proc() -> rawptr {
-	return g_mem
+game :: proc() -> rawptr {
+	return g
 }
 
 @(export)
 game_memory_size :: proc() -> int {
-	return size_of(GameMemory)
+	return size_of(Game)
 }
 
 @(export)
 game_hot_reloaded :: proc(mem: rawptr) {
-	g_mem = (^GameMemory)(mem)
+	g = (^Game)(mem)
 }
 
 @(export)
