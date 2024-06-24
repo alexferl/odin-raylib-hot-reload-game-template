@@ -1,15 +1,14 @@
-.PHONY: dev debug hot-reload release
+.DEFAULT_GOAL := init
+.PHONY: dev debug release
 
 .DEFAULT: help
 help:
 	@echo "make dev"
-	@echo "	setup development environment"
+	@echo "	run in dev mode"
 	@echo "make debug"
-	@echo "	run debug"
-	@echo "make hot-reload"
-	@echo "	run hot-reload"
+	@echo "	run in debug mode"
 	@echo "make release"
-	@echo "	run release"
+	@echo "	run in release mode"
 
 check-odin:
 ifeq (, $(shell which odin))
@@ -21,14 +20,14 @@ ifeq (, $(shell which pre-commit))
 	$(error "pre-commit not in $(PATH), pre-commit (https://pre-commit.com) is required")
 endif
 
-dev: check-odin check-pre-commit
+init: check-odin check-pre-commit
 	pre-commit install
+
+dev:
+	./build_hot_reload.sh && ./game.bin
 
 debug:
 	odin build main_release -out:game_debug.bin -no-bounds-check -debug && ./game_debug.bin
-
-hot-reload:
-	./build_hot_reload.sh && ./game.bin
 
 release:
 	odin build main_release -out:game_release.bin -no-bounds-check -o:speed -strict-style -vet-unused -vet-using-stmt -vet-using-param -vet-style -vet-semicolon && ./game.bin

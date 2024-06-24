@@ -11,9 +11,11 @@
 
 package game
 
-import "core:math/linalg"
 import "core:fmt"
+import "core:math/linalg"
 import rl "vendor:raylib"
+
+DEV :: #config(DEV, false)
 
 PIXEL_WINDOW_HEIGHT :: 180
 
@@ -86,12 +88,43 @@ game_update :: proc() -> bool {
 	return !rl.WindowShouldClose()
 }
 
+when DEV {
+	WINDOW_FLAGS :: rl.ConfigFlags { .WINDOW_RESIZABLE, .VSYNC_HINT }
+} else {
+	WINDOW_FLAGS :: rl.ConfigFlags { .VSYNC_HINT }
+}
+
+toggle_fullscreen :: proc() {
+	when DEV {
+		rl.ToggleBorderlessWindowed()
+	} else {
+		if rl.IsWindowFullscreen() {
+			rl.SetWindowState(WINDOW_FLAGS + { .WINDOW_RESIZABLE} )
+			rl.SetWindowSize(1280, 720)
+			rl.ShowCursor()
+		} else {
+			w := rl.GetMonitorWidth(rl.GetCurrentMonitor())
+			h := rl.GetMonitorHeight(rl.GetCurrentMonitor())
+			rl.ClearWindowState({ .WINDOW_RESIZABLE })
+			rl.ToggleFullscreen()
+			rl.SetWindowSize(w, h)
+			rl.HideCursor()
+		}
+	}
+}
+
 @(export)
 game_init_window :: proc() {
-	rl.SetConfigFlags({.WINDOW_RESIZABLE})
+	rl.SetConfigFlags(WINDOW_FLAGS)
 	rl.InitWindow(1280, 720, "Odin + Raylib + Hot Reload template!")
-	rl.SetWindowPosition(200, 200)
+	rl.SetExitKey(nil)
+	rl.InitAudioDevice()
 	rl.SetTargetFPS(500)
+
+	when !DEV {
+		rl.SetTraceLogLevel(.WARNING)
+		toggle_fullscreen()
+	}
 }
 
 @(export)

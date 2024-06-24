@@ -43,10 +43,10 @@ readable JSON. Good for storing data saved by an editor.
 
 package game
 
-import "core:fmt"
 import "base:intrinsics"
-import "core:strings"
 import "core:encoding/json"
+import "core:fmt"
+import "core:strings"
 
 _ :: fmt
 

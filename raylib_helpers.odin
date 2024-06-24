@@ -1,7 +1,7 @@
 package game
 
-import rl "vendor:raylib"
 import "core:slice"
+import rl "vendor:raylib"
 
 Texture :: rl.Texture
 Color :: rl.Color

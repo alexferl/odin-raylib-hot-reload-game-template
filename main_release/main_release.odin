@@ -41,7 +41,7 @@ main :: proc() {
 
 		when USE_TRACKING_ALLOCATOR {
 			for b in tracking_allocator.bad_free_array {
-				log.error("Bad free at: %v", b.location)
+				log.error("bad free at: %v", b.location)
 			}
 
 			clear(&tracking_allocator.bad_free_array)

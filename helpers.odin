@@ -2,9 +2,9 @@
 
 package game
 
+import "base:intrinsics"
 import "core:reflect"
 import "core:strings"
-import "base:intrinsics"
 
 increase_or_wrap_enum :: proc(e: $T) -> T {
 	ei := int(e) + 1

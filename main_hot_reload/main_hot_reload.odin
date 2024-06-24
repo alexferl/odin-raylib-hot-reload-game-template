@@ -2,12 +2,12 @@
 
 package main
 
+import "core:c/libc"
 import "core:dynlib"
 import "core:fmt"
-import "core:c/libc"
-import "core:os"
 import "core:log"
 import "core:mem"
+import "core:os"
 
 when ODIN_OS == .Windows {
 	DLL_EXT :: ".dll"
@@ -26,7 +26,7 @@ copy_dll :: proc(to: string) -> bool {
 	}
 
 	if exit != 0 {
-		fmt.printfln("Failed to copy game" + DLL_EXT + " to {0}", to)
+		fmt.printfln("failed to copy game" + DLL_EXT + " to {0}", to)
 		return false
 	}
 
@@ -53,7 +53,7 @@ load_game_api :: proc(api_version: int) -> (api: Game_API, ok: bool) {
 	mod_time, mod_time_error := os.last_write_time_by_name("game" + DLL_EXT)
 	if mod_time_error != os.ERROR_NONE {
 		fmt.printfln(
-			"Failed getting last write time of game" + DLL_EXT + ", error code: {1}",
+			"failed getting last write time of game" + DLL_EXT + ", error code: {1}",
 			mod_time_error,
 		)
 		return
@@ -65,7 +65,7 @@ load_game_api :: proc(api_version: int) -> (api: Game_API, ok: bool) {
 
 	_, ok = dynlib.initialize_symbols(&api, game_dll_name, "game_", "lib")
 	if !ok {
-		fmt.printfln("Failed initializing symbols: {0}", dynlib.last_error())
+		fmt.printfln("failed initializing symbols: {0}", dynlib.last_error())
 	}
 
 	api.api_version = api_version
@@ -78,12 +78,12 @@ load_game_api :: proc(api_version: int) -> (api: Game_API, ok: bool) {
 unload_game_api :: proc(api: ^Game_API) {
 	if api.lib != nil {
 		if !dynlib.unload_library(api.lib) {
-			fmt.printfln("Failed unloading lib: {0}", dynlib.last_error())
+			fmt.printfln("failed unloading lib: {0}", dynlib.last_error())
 		}
 	}
 
 	if os.remove(fmt.tprintf("game_{0}" + DLL_EXT, api.api_version)) != 0 {
-		fmt.printfln("Failed to remove game_{0}" + DLL_EXT + " copy", api.api_version)
+		fmt.printfln("failed to remove game_{0}" + DLL_EXT + " copy", api.api_version)
 	}
 }
 
@@ -99,7 +99,7 @@ main :: proc() {
 		err := false
 
 		for _, value in a.allocation_map {
-			fmt.printf("%v: Leaked %v bytes\n", value.location, value.size)
+			fmt.printf("%v: leaked %v bytes\n", value.location, value.size)
 			err = true
 		}
 
@@ -111,7 +111,7 @@ main :: proc() {
 	game_api, game_api_ok := load_game_api(game_api_version)
 
 	if !game_api_ok {
-		fmt.println("Failed to load Game API")
+		fmt.println("failed to load Game API")
 		return
 	}
 
@@ -162,11 +162,11 @@ main :: proc() {
 
 		if len(tracking_allocator.bad_free_array) > 0 {
 			for b in tracking_allocator.bad_free_array {
-				log.errorf("Bad free at: %v", b.location)
+				log.errorf("bad free at: %v", b.location)
 			}
 
 			libc.getchar()
-			panic("Bad free detected")
+			panic("bad free detected")
 		}
 
 		free_all(context.temp_allocator)

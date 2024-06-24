@@ -5,12 +5,12 @@ This is an Odin + Raylib game template with hot reloading.
 ## Usage
 Setup the development environment first:
 ```shell
-make dev
+make
 ```
 
 Build and start the game:
 ```shell
-make hot-reload
+make dev
 ```
 
 ## Credits
