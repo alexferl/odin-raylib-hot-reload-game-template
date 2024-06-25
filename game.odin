@@ -12,7 +12,6 @@
 package game
 
 import "core:fmt"
-import "core:math/linalg"
 import rl "vendor:raylib"
 
 DEV :: #config(DEV, false)
@@ -20,20 +19,20 @@ DEV :: #config(DEV, false)
 PIXEL_WINDOW_HEIGHT :: 180
 
 Game :: struct {
-	player_pos: Vec2,
-	some_number: int,
+	player_speed: f32,
+	player_vel: rl.Vector3,
+	player_pos: rl.Vector3,
 }
 
 g: ^Game
 
-game_camera :: proc() -> rl.Camera2D {
-	w := f32(rl.GetScreenWidth())
-	h := f32(rl.GetScreenHeight())
-
-	return {
-		zoom = h/PIXEL_WINDOW_HEIGHT,
+game_camera :: proc() -> rl.Camera3D {
+	return rl.Camera3D{
+		position = rl.Vector3{g.player_pos.x + 10, g.player_pos.y + 50, g.player_pos.z + 10},
 		target = g.player_pos,
-		offset = { w/2, h/2 },
+		up = rl.Vector3{0.0, 1.0, 0.0},
+		fovy = 45.0,
+		projection = rl.CameraProjection.PERSPECTIVE,
 	}
 }
 
@@ -44,38 +43,74 @@ ui_camera :: proc() -> rl.Camera2D {
 }
 
 update :: proc() {
-	input: Vec2
+	input: rl.Vector3
 
 	if rl.IsKeyDown(.UP) || rl.IsKeyDown(.W) {
-		input.y -= 1
+		input.x -= g.player_speed
+		input.z -= g.player_speed
 	}
 	if rl.IsKeyDown(.DOWN) || rl.IsKeyDown(.S) {
-		input.y += 1
+		input.x += g.player_speed
+		input.z += g.player_speed
 	}
 	if rl.IsKeyDown(.LEFT) || rl.IsKeyDown(.A) {
-		input.x -= 1
+		input.x -= g.player_speed
+		input.z += g.player_speed
 	}
 	if rl.IsKeyDown(.RIGHT) || rl.IsKeyDown(.D) {
-		input.x += 1
+		input.x += g.player_speed
+		input.z -= g.player_speed
 	}
 
-	input = linalg.normalize0(input)
+	// don't negate inputs if pressing multiple keys
+	if (rl.IsKeyDown(.UP) && rl.IsKeyDown(.LEFT)) || (rl.IsKeyDown(.W) && rl.IsKeyDown(.A)) {
+		input.x -= g.player_speed
+		input.z += g.player_speed
+	}
+	if (rl.IsKeyDown(.UP) && rl.IsKeyDown(.RIGHT)) || (rl.IsKeyDown(.W) && rl.IsKeyDown(.D)) {
+		input.x += g.player_speed
+		input.z -= g.player_speed
+	}
+	if (rl.IsKeyDown(.DOWN) && rl.IsKeyDown(.LEFT)) || (rl.IsKeyDown(.S) && rl.IsKeyDown(.A)) {
+		input.x -= g.player_speed
+		input.z += g.player_speed
+	}
+	if (rl.IsKeyDown(.DOWN) && rl.IsKeyDown(.RIGHT)) ||  (rl.IsKeyDown(.S) && rl.IsKeyDown(.D)) {
+		input.x += g.player_speed
+		input.z -= g.player_speed
+	}
+
+	// make sure we don't go over the max speed by pressing multiple keys
+	if input.x > g.player_speed {
+		input.x = g.player_speed
+	}
+	if input.z > g.player_speed {
+		input.z = g.player_speed
+	}
+	if input.x < -g.player_speed {
+		input.x = -g.player_speed
+	}
+	if input.z < -g.player_speed {
+		input.z = -g.player_speed
+	}
+
 	g.player_pos += input * rl.GetFrameTime() * 100
-	g.some_number += 1
+	g.player_vel = input
 }
 
 draw :: proc() {
 	rl.BeginDrawing()
+
 	rl.ClearBackground(rl.BLACK)
 
-	rl.BeginMode2D(game_camera())
-	rl.DrawRectangleV(g.player_pos, {10, 20}, rl.WHITE)
-	rl.DrawRectangleV({20, 20}, {10, 10}, rl.RED)
-	rl.DrawRectangleV({-30, -20}, {10, 10}, rl.GREEN)
-	rl.EndMode2D()
+	rl.BeginMode3D(game_camera())
+	rl.DrawCube(g.player_pos, 2.0, 2.0, 2.0, rl.WHITE)
+	rl.DrawCubeWires(g.player_pos, 2.0, 2.0, 2.0, rl.MAROON)
+	rl.DrawGrid(50, 1.0)
+	rl.EndMode3D()
 
 	rl.BeginMode2D(ui_camera())
-	rl.DrawText(fmt.ctprintf("some_number: %v\nplayer_pos: %v", g.some_number, g.player_pos), 5, 5, 8, rl.WHITE)
+	rl.DrawText(fmt.ctprintf("player_pos: %v\nplayer_vel: %v", g.player_pos, g.player_vel), 5, 5, 8, rl.WHITE)
 	rl.EndMode2D()
 
 	rl.EndDrawing()
@@ -119,7 +154,7 @@ game_init_window :: proc() {
 	rl.InitWindow(1280, 720, "Odin + Raylib + Hot Reload template!")
 	rl.SetExitKey(nil)
 	rl.InitAudioDevice()
-	rl.SetTargetFPS(500)
+	rl.SetTargetFPS(60)
 
 	when !DEV {
 		rl.SetTraceLogLevel(.WARNING)
@@ -131,8 +166,8 @@ game_init_window :: proc() {
 game_init :: proc() {
 	g = new(Game)
 
-	g^ = Game {
-		some_number = 100,
+	g^ = Game{
+		player_speed = 0.1,
 	}
 
 	game_hot_reloaded(g)
