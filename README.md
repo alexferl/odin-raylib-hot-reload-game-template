@@ -1,6 +1,6 @@
 # odin-raylib-hot-reload-game-template
 
-This is an Odin + Raylib game template with hot reloading.
+This is a [Odin](https://odin-lang.org) + [raylib](https://www.raylib.com/) 3D game template with hot reloading.
 
 ## Usage
 Setup the development environment first:
