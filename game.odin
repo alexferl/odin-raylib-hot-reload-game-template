@@ -126,7 +126,6 @@ draw :: proc() {
 	cam_mode := "PLAYER"
 	if !g.free_cam  {
 		cam = game_camera()
-		rl.UpdateCamera(&cam, rl.CameraMode.ORBITAL)
 	} else {
 		cam_mode = "FREE"
 		rl.UpdateCamera(&cam, rl.CameraMode.FREE)
