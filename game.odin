@@ -142,8 +142,12 @@ draw :: proc() {
 
 	rl.BeginMode2D(ui_camera())
 	text := fmt.ctprintf(
-		"player:\npos: [%.2f, %.2f, %.2f]\nvel: %v\ncamera:\nmode: %v (Press M)\npos: [%.2f, %.2f, %.2f]\ntarget: [%.2f, %.2f, %.2f]",
-		g.player_pos.x, g.player_pos.y, g.player_pos.z, g.player_vel, cam_mode, cam.position.x, cam.position.y, cam.position.z, cam.target.x, cam.target.y, cam.target.z,
+		"player:\npos: [%.2f, %.2f, %.2f]\nvel: [%.2f, %.2f, %.2f]\ncamera:\nmode: %v (Press M)\npos: [%.2f, %.2f, %.2f]\ntarget: [%.2f, %.2f, %.2f]",
+		g.player_pos.x, g.player_pos.y, g.player_pos.z,
+		g.player_vel.x, g.player_vel.y, g.player_vel.z,
+		cam_mode,
+		cam.position.x, cam.position.y, cam.position.z,
+		cam.target.x, cam.target.y, cam.target.z,
 	)
 	rl.DrawText(text, 5, 5, 8, rl.WHITE)
 	rl.EndMode2D()
