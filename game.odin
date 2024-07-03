@@ -16,33 +16,19 @@ import rl "vendor:raylib"
 
 DEV :: #config(DEV, false)
 
-PIXEL_WINDOW_HEIGHT :: 180
+PIXEL_WINDOW_HEIGHT :: 360
 
 Game :: struct {
-	free_cam: bool,
-	player_pos: rl.Vector3,
-	player_speed: f32,
-	player_vel: rl.Vector3,
+	player: Entity,
+	world: World,
 }
 
 g: ^Game
 
-cam := free_camera()
-
 game_camera :: proc() -> rl.Camera3D {
 	return rl.Camera3D{
-		position = rl.Vector3{g.player_pos.x + 10, g.player_pos.y + 50, g.player_pos.z + 10},
-		target = g.player_pos,
-		up = rl.Vector3{0.0, 1.0, 0.0},
-		fovy = 45.0,
-		projection = rl.CameraProjection.PERSPECTIVE,
-	}
-}
-
-free_camera :: proc() -> rl.Camera3D {
-	return rl.Camera3D{
 		position = rl.Vector3{10.0, 10.0, 10.0},
-		target = rl.Vector3{0.0, 0.0, 0.0},
+		target = {0.0, 0.0, 0.0},
 		up = rl.Vector3{0.0, 1.0, 0.0},
 		fovy = 45.0,
 		projection = rl.CameraProjection.PERSPECTIVE,
@@ -56,101 +42,45 @@ ui_camera :: proc() -> rl.Camera2D {
 }
 
 update :: proc() {
-	if rl.IsKeyPressed(.M) {
-		g.free_cam = !g.free_cam
-	}
-
-	if !g.free_cam {
-		input()
-	}
-}
-
-input :: proc() {
-	input: rl.Vector3
-	speed := g.player_speed/100
-
-	if rl.IsKeyDown(.UP) || rl.IsKeyDown(.W) {
-		input.x -= speed
-		input.z -= speed
-	}
-	if rl.IsKeyDown(.DOWN) || rl.IsKeyDown(.S) {
-		input.x += speed
-		input.z += speed
-	}
-	if rl.IsKeyDown(.LEFT) || rl.IsKeyDown(.A) {
-		input.x -= speed
-		input.z += speed
-	}
-	if rl.IsKeyDown(.RIGHT) || rl.IsKeyDown(.D) {
-		input.x += speed
-		input.z -= speed
-	}
-
-	// don't negate inputs if pressing multiple keys
-	if (rl.IsKeyDown(.UP) && rl.IsKeyDown(.LEFT)) || (rl.IsKeyDown(.W) && rl.IsKeyDown(.A)) {
-		input.x -= speed
-		input.z += speed
-	}
-	if (rl.IsKeyDown(.UP) && rl.IsKeyDown(.RIGHT)) || (rl.IsKeyDown(.W) && rl.IsKeyDown(.D)) {
-		input.x += speed
-		input.z -= speed
-	}
-	if (rl.IsKeyDown(.DOWN) && rl.IsKeyDown(.LEFT)) || (rl.IsKeyDown(.S) && rl.IsKeyDown(.A)) {
-		input.x -= speed
-		input.z += speed
-	}
-	if (rl.IsKeyDown(.DOWN) && rl.IsKeyDown(.RIGHT)) ||  (rl.IsKeyDown(.S) && rl.IsKeyDown(.D)) {
-		input.x += speed
-		input.z -= speed
-	}
-
-	// make sure we don't go over the max speed by pressing multiple keys
-	if input.x > speed {
-		input.x = speed
-	}
-	if input.z > speed {
-		input.z = speed
-	}
-	if input.x < -speed {
-		input.x = -speed
-	}
-	if input.z < -speed {
-		input.z = -speed
-	}
-
-	g.player_pos += input * rl.GetFrameTime() * 100
-	g.player_vel = input*100
+	world_update(&g.world)
 }
 
 draw :: proc() {
-	cam_mode := "PLAYER"
-	if !g.free_cam  {
-		cam = game_camera()
-	} else {
-		cam_mode = "FREE"
-		rl.UpdateCamera(&cam, rl.CameraMode.FREE)
-	}
+	//cam_mode := "PLAYER"
+	cam := game_camera()
 
 	rl.BeginDrawing()
-	rl.ClearBackground(rl.BLACK)
+	rl.ClearBackground(rl.RAYWHITE)
 
-	rl.BeginMode3D(cam)
-	rl.DrawCube(g.player_pos, 2.0, 2.0, 2.0, rl.WHITE)
-	rl.DrawCubeWires(g.player_pos, 2.0, 2.0, 2.0, rl.RED)
-	rl.DrawGrid(50, 1.0)
-	rl.EndMode3D()
+	// 3D mode
+	{
+		rl.BeginMode3D(cam)
 
-	rl.BeginMode2D(ui_camera())
-	text := fmt.ctprintf(
-		"player:\npos: [%.2f, %.2f, %.2f]\nvel: [%.2f, %.2f, %.2f]\ncamera:\nmode: %v (Press M)\npos: [%.2f, %.2f, %.2f]\ntarget: [%.2f, %.2f, %.2f]",
-		g.player_pos.x, g.player_pos.y, g.player_pos.z,
-		g.player_vel.x, g.player_vel.y, g.player_vel.z,
-		cam_mode,
-		cam.position.x, cam.position.y, cam.position.z,
-		cam.target.x, cam.target.y, cam.target.z,
-	)
-	rl.DrawText(text, 5, 5, 8, rl.WHITE)
-	rl.EndMode2D()
+		rl.DrawGrid(50, 1.0)
+
+		world_draw(&g.world)
+
+		rl.EndMode3D()
+	}
+
+	// 2D mode
+	{
+		rl.BeginMode2D(ui_camera())
+
+		transform := component_get(&g.player, Transform)
+		physics := component_get(&g.player, Physics)
+		text := fmt.ctprintf(
+			"player:\npos: [%.2f, %.2f, %.2f]\nvel: [%.2f, %.2f, %.2f]\ncamera:\nmode: %v (Press M)\npos: [%.2f, %.2f, %.2f]\ntarget: [%.2f, %.2f, %.2f]",
+			transform.position.x, transform.position.y, transform.position.z,
+			physics.velocity.x, physics.velocity.y, physics.velocity.z,
+			"player",
+			cam.position.x, cam.position.y, cam.position.z,
+			cam.target.x, cam.target.y, cam.target.z,
+		)
+		rl.DrawText(text, 5, 5, 8, rl.DARKGRAY)
+
+		rl.EndMode2D()
+	}
 
 	rl.EndDrawing()
 }
@@ -205,8 +135,26 @@ game_init_window :: proc() {
 game_init :: proc() {
 	g = new(Game)
 
+	world := world_init(DEFAULT_WORLD_NAME)
+
+	player := entity_create(&world)
+	component_add(&player, Transform{
+		position = {0.0, 1.0, 0.0},
+		scale = {2.0, 2.0, 2.0},
+	})
+	component_add(&player, Physics{
+		mass = 0.0,
+		move_speed = 10.0,
+	})
+	component_add(&player, Render{color = rl.GRAY})
+	component_add(&player, DebugRender{enabled = true, color = rl.RED})
+
+	system_add(&world, player_movement_system)
+	system_add(&world, render_system)
+
 	g^ = Game{
-		player_speed = 10.0,
+		player = player,
+		world = world,
 	}
 
 	game_hot_reloaded(g)
@@ -214,6 +162,7 @@ game_init :: proc() {
 
 @(export)
 game_shutdown :: proc() {
+	world_destroy(&g.world)
 	free(g)
 }
 
