@@ -23,3 +23,8 @@ DebugRender :: struct {
 	enabled: bool,
 	color: rl.Color,
 }
+
+Camera3D :: struct {
+	camera: rl.Camera3D,
+	offset: rl.Vector3,
+}

@@ -67,6 +67,20 @@ player_movement_system := PlayerMovementSystem{
 	draw = nil,
 }
 
+CameraMovementSystem :: System
+
+camera_movement_system_update :: proc(w: ^World) {
+	camera := component_get(&g.camera, Camera3D)
+	player := component_get(&g.player, Transform)
+
+	camera.camera.target = player.position
+	camera.camera.position = player.position + camera.offset
+}
+
+camera_movement_system := CameraMovementSystem{
+	update = camera_movement_system_update,
+}
+
 RenderSystem :: System
 
 render_system_draw :: proc(w: ^World) {

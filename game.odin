@@ -19,6 +19,7 @@ DEV :: #config(DEV, false)
 PIXEL_WINDOW_HEIGHT :: 360
 
 Game :: struct {
+	camera: Entity,
 	player: Entity,
 	world: World,
 }
@@ -26,7 +27,7 @@ Game :: struct {
 g: ^Game
 
 game_camera :: proc() -> rl.Camera3D {
-	return rl.Camera3D{
+	return {
 		position = rl.Vector3{10.0, 10.0, 10.0},
 		target = {0.0, 0.0, 0.0},
 		up = rl.Vector3{0.0, 1.0, 0.0},
@@ -47,14 +48,14 @@ update :: proc() {
 
 draw :: proc() {
 	//cam_mode := "PLAYER"
-	cam := game_camera()
+	camera := component_get(&g.camera, Camera3D).camera
 
 	rl.BeginDrawing()
 	rl.ClearBackground(rl.RAYWHITE)
 
 	// 3D mode
 	{
-		rl.BeginMode3D(cam)
+		rl.BeginMode3D(camera)
 
 		rl.DrawGrid(50, 1.0)
 
@@ -74,8 +75,8 @@ draw :: proc() {
 			transform.position.x, transform.position.y, transform.position.z,
 			physics.velocity.x, physics.velocity.y, physics.velocity.z,
 			"player",
-			cam.position.x, cam.position.y, cam.position.z,
-			cam.target.x, cam.target.y, cam.target.z,
+			camera.position.x, camera.position.y, camera.position.z,
+			camera.target.x, camera.target.y, camera.target.z,
 		)
 		rl.DrawText(text, 5, 5, 8, rl.DARKGRAY)
 
@@ -137,6 +138,18 @@ game_init :: proc() {
 
 	world := world_init(DEFAULT_WORLD_NAME)
 
+	camera := entity_create(&world)
+	component_add(&camera, Camera3D{
+		camera = rl.Camera3D{
+			position = {10, 10, 10},
+			target = {0, 0, 0},
+			up = {0, 1, 0},
+			fovy = 45,
+			projection = .PERSPECTIVE,
+		},
+		offset = {20.0, 20.0, 20.0},
+	})
+
 	player := entity_create(&world)
 	component_add(&player, Transform{
 		position = {0.0, 1.0, 0.0},
@@ -150,9 +163,11 @@ game_init :: proc() {
 	component_add(&player, DebugRender{enabled = true, color = rl.RED})
 
 	system_add(&world, player_movement_system)
+	system_add(&world, camera_movement_system)
 	system_add(&world, render_system)
 
 	g^ = Game{
+		camera = camera,
 		player = player,
 		world = world,
 	}
