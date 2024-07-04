@@ -1,10 +1,16 @@
 package game
 
+import "core:math"
 import rl "vendor:raylib"
 
 PlayerMovementSystem :: System
 
 player_movement_system_update :: proc(w: ^World) {
+	camera := component_get(&g.camera, Camera)
+	if camera.mode == .Free {
+		return
+	}
+
 	transform := component_get(&g.player, Transform)
 	physics := component_get(&g.player, Physics)
 
@@ -70,11 +76,94 @@ player_movement_system := PlayerMovementSystem{
 CameraMovementSystem :: System
 
 camera_movement_system_update :: proc(w: ^World) {
-	camera := component_get(&g.camera, Camera3D)
+	camera := component_get(&g.camera, Camera)
 	player := component_get(&g.player, Transform)
 
-	camera.camera.target = player.position
-	camera.camera.position = player.position + camera.offset
+	if rl.IsKeyPressed(.M) {
+		if camera.mode == .Player {
+			camera.mode = .Free
+
+			rl.DisableCursor()  // Hide and lock cursor in free camera mode
+
+			// Set initial free camera position and target
+			camera.position = player.position + camera.offset
+			camera.target = player.position + camera.offset
+
+			// Calculate initial yaw and pitch
+			to_player := camera.target - camera.position + camera.offset
+			camera.yaw = math.atan2(-to_player.x, -to_player.z)
+			camera.pitch = -math.atan2(to_player.y, math.sqrt(to_player.x*to_player.x + to_player.z*to_player.z))
+
+			// Ensure the camera is using the correct orientation
+			forward := rl.Vector3Normalize(to_player)
+			right := rl.Vector3Normalize(rl.Vector3CrossProduct({0, 1, 0}, forward))
+			up := rl.Vector3CrossProduct(forward, right)
+
+			camera.up = up
+		} else {
+			camera.mode = .Player
+			rl.EnableCursor()  // Show and unlock cursor in player-following mode
+		}
+	}
+
+	if camera.mode == .Player {
+		// Player-following camera
+		camera.target = player.position
+		camera.position = player.position + camera.offset
+		camera.up = {0.0, 1.0, 0.0}
+	} else {
+		// Mouse look
+		mouse_delta := rl.GetMouseDelta()
+
+		// Update yaw and pitch
+		camera.yaw -= mouse_delta.x * camera.mouse_sensitivity
+		camera.pitch -= mouse_delta.y * camera.mouse_sensitivity
+
+		// Clamp pitch to avoid flipping
+		camera.pitch = math.clamp(camera.pitch, -math.PI/2 + 0.1, math.PI/2 - 0.1)
+
+		// Calculate new forward vector
+		forward := rl.Vector3{
+			math.cos(camera.pitch) * math.sin(camera.yaw),
+			math.sin(camera.pitch),
+			math.cos(camera.pitch) * math.cos(camera.yaw),
+		}
+
+		// Calculate right vector
+		right := rl.Vector3Normalize(rl.Vector3CrossProduct({0, 1, 0}, forward))
+
+		// Calculate up vector
+		up := rl.Vector3CrossProduct(forward, right)
+
+		// Zoom with mouse wheel
+		wheel_move := rl.GetMouseWheelMove()
+		if wheel_move != 0 {
+			zoom_factor := wheel_move * camera.movement_speed * camera.zoom_sensitivity
+			camera.position = camera.position + forward * zoom_factor
+		}
+
+		// Movement
+		move_speed := camera.movement_speed * rl.GetFrameTime()
+		move_vec := rl.Vector3{0, 0, 0}
+
+		if rl.IsKeyDown(.W) do move_vec = move_vec + forward
+		if rl.IsKeyDown(.S) do move_vec = move_vec - forward
+		if rl.IsKeyDown(.D) do move_vec = move_vec - right
+		if rl.IsKeyDown(.A) do move_vec = move_vec + right
+
+		if rl.Vector3Length(move_vec) > 0 {
+			move_vec = rl.Vector3Normalize(move_vec) * move_speed
+			camera.position = camera.position + move_vec
+		}
+
+		// Vertical movement
+		if rl.IsKeyDown(.SPACE) do camera.position.y += move_speed
+		if rl.IsKeyDown(.LEFT_SHIFT) do camera.position.y -= move_speed
+
+		// Update camera target
+		camera.target = camera.position + forward
+		camera.up = up
+	}
 }
 
 camera_movement_system := CameraMovementSystem{

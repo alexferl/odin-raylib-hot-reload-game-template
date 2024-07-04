@@ -37,8 +37,7 @@ update :: proc() {
 }
 
 draw :: proc() {
-	//cam_mode := "PLAYER"
-	camera := component_get(&g.camera, Camera3D).camera
+	camera := component_get(&g.camera, Camera)
 
 	rl.BeginDrawing()
 	rl.ClearBackground(rl.RAYWHITE)
@@ -64,7 +63,7 @@ draw :: proc() {
 			"player:\npos: [%.2f, %.2f, %.2f]\nvel: [%.2f, %.2f, %.2f]\ncamera:\nmode: %v (Press M)\npos: [%.2f, %.2f, %.2f]\ntarget: [%.2f, %.2f, %.2f]",
 			transform.position.x, transform.position.y, transform.position.z,
 			physics.velocity.x, physics.velocity.y, physics.velocity.z,
-			"player",
+			camera.mode,
 			camera.position.x, camera.position.y, camera.position.z,
 			camera.target.x, camera.target.y, camera.target.z,
 		)
@@ -129,15 +128,19 @@ game_init :: proc() {
 	world := world_init(DEFAULT_WORLD_NAME)
 
 	camera := entity_create(&world)
-	component_add(&camera, Camera3D{
-		camera = rl.Camera3D{
-			position = {10, 10, 10},
-			target = {0, 0, 0},
-			up = {0, 1, 0},
-			fovy = 45,
+	component_add(&camera, Camera{
+		camera = rl.Camera{
+			position = {10.0, 10.0, 10.0},
+			target = {0.0, 0.0, 0.0},
+			up = {0.0, 1.0, 0.0},
+			fovy = 45.0,
 			projection = .PERSPECTIVE,
 		},
+		mode = .Player,
 		offset = {20.0, 20.0, 20.0},
+		movement_speed = 20.0,
+		mouse_sensitivity = 0.002,
+		zoom_sensitivity = 0.1,
 	})
 
 	player := entity_create(&world)

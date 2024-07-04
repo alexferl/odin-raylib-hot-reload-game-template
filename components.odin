@@ -24,7 +24,18 @@ DebugRender :: struct {
 	color: rl.Color,
 }
 
-Camera3D :: struct {
-	camera: rl.Camera3D,
+CameraMode :: enum {
+	Player,
+	Free,
+}
+
+Camera :: struct {
+	using camera: rl.Camera,
+	mode: CameraMode,
 	offset: rl.Vector3,
+	pitch: f32,
+	yaw: f32,
+	movement_speed: f32,
+	mouse_sensitivity: f32,
+	zoom_sensitivity: f32,
 }
