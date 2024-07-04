@@ -26,16 +26,6 @@ Game :: struct {
 
 g: ^Game
 
-game_camera :: proc() -> rl.Camera3D {
-	return {
-		position = rl.Vector3{10.0, 10.0, 10.0},
-		target = {0.0, 0.0, 0.0},
-		up = rl.Vector3{0.0, 1.0, 0.0},
-		fovy = 45.0,
-		projection = rl.CameraProjection.PERSPECTIVE,
-	}
-}
-
 ui_camera :: proc() -> rl.Camera2D {
 	return {
 		zoom = f32(rl.GetScreenHeight())/PIXEL_WINDOW_HEIGHT,
