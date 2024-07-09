@@ -4,7 +4,7 @@ import rl "vendor:raylib"
 
 Transform :: struct {
     position: rl.Vector3,
-    rotation: rl.Vector3,
+    rotation: rl.Quaternion,
     scale: rl.Vector3,
 }
 
@@ -17,9 +17,15 @@ Physics :: struct {
 
 Render :: struct {
     color: rl.Color,
+	model: rl.Model,
+	animations: [^]rl.ModelAnimation,
+	animations_count: i32,
+	animation_index: u32,
+	animation_current_frame: u32,
 }
 
 DebugRender :: struct {
+
 	enabled: bool,
 	color: rl.Color,
 }
@@ -38,4 +44,9 @@ Camera :: struct {
 	movement_speed: f32,
 	mouse_sensitivity: f32,
 	zoom_sensitivity: f32,
+}
+
+Grid :: struct {
+	size: i32,
+	collider: rl.BoundingBox,
 }
