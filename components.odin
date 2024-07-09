@@ -25,9 +25,7 @@ Render :: struct {
 }
 
 DebugRender :: struct {
-
 	enabled: bool,
-	color: rl.Color,
 }
 
 CameraMode :: enum {

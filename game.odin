@@ -172,7 +172,7 @@ game_init :: proc() {
 		animation_index = 1, // idle
 		color = rl.WHITE,
 	})
-	component_add(&player, DebugRender{enabled = true, color = rl.RED})
+	component_add(&player, DebugRender{enabled = true})
 
 	// Grid
 	grid := entity_create(&world)
@@ -184,6 +184,7 @@ game_init :: proc() {
 			rl.Vector3{grid_size/2, 0.1, grid_size/2},
 		},
 	})
+	component_add(&grid, DebugRender{enabled = true})
 
 	system_add(&world, player_movement_system)
 	system_add(&world, camera_movement_system)

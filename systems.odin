@@ -199,8 +199,10 @@ render_system_draw :: proc(w: ^World) {
 		grid := component_get(&e, Grid)
 
 		if grid != nil {
-			rl.DrawBoundingBox(grid.collider, rl.GREEN)
 			rl.DrawGrid(grid.size, 1.0)
+			if debug != nil && debug.enabled {
+				rl.DrawBoundingBox(grid.collider, rl.GREEN)
+			}
 		}
 
 		if transform != nil && render != nil {
@@ -215,15 +217,15 @@ render_system_draw :: proc(w: ^World) {
 				render.color,
 			)
 
-			if physics != nil {
-				rl.DrawBoundingBox(physics.collider, rl.RED)
-			}
-
 			anim := render.animations[render.animation_index]
 			render.animation_current_frame = (render.animation_current_frame + 1) % u32(anim.frameCount)
 			rl.UpdateModelAnimation(render.model, anim, i32(render.animation_current_frame))
 
 			if debug != nil && debug.enabled {
+				if physics != nil {
+					rl.DrawBoundingBox(physics.collider, rl.RED)
+				}
+
 				forward := rl.Vector3RotateByQuaternion({0, 0, 1}, transform.rotation)
 				end_point := transform.position + forward * 3.0
 				rl.DrawLine3D(transform.position, end_point, rl.BLUE)
