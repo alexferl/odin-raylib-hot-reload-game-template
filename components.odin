@@ -13,20 +13,26 @@ Physics :: struct {
     velocity: rl.Vector3,
     mass: f32,
     move_speed: f32,
-    collider: rl.BoundingBox,
+}
+
+Collision :: struct {
+	bounding_box: rl.BoundingBox,
 }
 
 Render :: struct {
     color: rl.Color,
 	model: rl.Model,
-	animations: [^]rl.ModelAnimation,
-	animations_count: i32,
-	animation_index: u32,
-	animation_current_frame: u32,
 }
 
 DebugRender :: struct {
 	enabled: bool,
+}
+
+Animation :: struct {
+	animations: [^]rl.ModelAnimation,
+	count: i32,
+	index: u32,
+	current_frame: u32,
 }
 
 CameraMode :: enum {
@@ -47,5 +53,5 @@ Camera :: struct {
 
 Grid :: struct {
 	size: i32,
-	collider: rl.BoundingBox,
+	bounding_box: rl.BoundingBox,
 }

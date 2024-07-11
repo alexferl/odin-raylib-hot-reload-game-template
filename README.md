@@ -16,4 +16,5 @@ make dev
 
 ## Credits
 Based on [karl-zylinski/odin-raylib-hot-reload-game-template](https://github.com/karl-zylinski/odin-raylib-hot-reload-game-template).
+
 Model from [raylib examples](https://github.com/raysan5/raylib/tree/master/examples/models/resources/models/gltf).

@@ -145,12 +145,7 @@ game_init :: proc() {
 	})
 
 	// Player
-	model := rl.LoadModel("assets/greenman.glb")
-	anims_count : i32 = 0
-	anims := rl.LoadModelAnimations("assets/greenman.glb", &anims_count)
-
 	player := entity_create(&world)
-
 	pos := rl.Vector3{0.0, 10.0, 0.0}
 	scale_factor : f32 = 1.0
 
@@ -161,42 +156,59 @@ game_init :: proc() {
 		scale_factor = scale_factor,
 	})
 
-	player_bounding_box := rl.GetModelBoundingBox(model)
-	scaled_min := player_bounding_box.min * scale_factor
-	scaled_max := player_bounding_box.max * scale_factor
-
 	component_add(&player, Physics{
 		mass = 15.0,
 		move_speed = 10.0,
-		collider = rl.BoundingBox{
+	})
+
+	model := rl.LoadModel("assets/greenman.glb")
+	anims_count : i32 = 0
+	anims := rl.LoadModelAnimations("assets/greenman.glb", &anims_count)
+
+	player_bounding_box := rl.GetModelBoundingBox(model)
+	scaled_min := player_bounding_box.min * scale_factor
+	scaled_max := player_bounding_box.max * scale_factor
+	component_add(&player, Collision{
+		bounding_box = rl.BoundingBox{
 			min = scaled_min + pos,
 			max = scaled_max + pos,
 		},
 	})
+
 	component_add(&player, Render{
 		model = model,
-		animations = anims,
-		animations_count = anims_count,
-		animation_index = 1, // idle
 		color = rl.WHITE,
 	})
 	component_add(&player, DebugRender{enabled = true})
 
+	component_add(&player, Animation{
+		animations = anims,
+		count = anims_count,
+		index = 1, // idle
+	})
+
 	// Grid
 	grid := entity_create(&world)
 	grid_size : f32 = 40
+
 	component_add(&grid, Grid{
 		size = i32(grid_size),
-		collider = rl.BoundingBox{
+	})
+
+	component_add(&grid, Collision{
+		bounding_box = rl.BoundingBox{
 			rl.Vector3{-grid_size/2, -0.1, -grid_size/2},
 			rl.Vector3{grid_size/2, 0.1, grid_size/2},
 		},
 	})
+
 	component_add(&grid, DebugRender{enabled = true})
 
+	// Systems
 	system_add(&world, player_movement_system)
 	system_add(&world, camera_movement_system)
 	system_add(&world, render_system)
+	system_add(&world, animation_system)
 
 	g^ = Game{
 		camera = camera,

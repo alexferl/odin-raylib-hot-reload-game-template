@@ -5,6 +5,11 @@ import rl "vendor:raylib"
 
 PlayerMovementSystem :: System
 
+player_movement_system := PlayerMovementSystem{
+	update = player_movement_system_update,
+	draw = nil,
+}
+
 player_movement_system_update :: proc(w: ^World) {
 	camera := component_get(&g.camera, Camera)
 	if camera.mode == .Free {
@@ -13,104 +18,97 @@ player_movement_system_update :: proc(w: ^World) {
 
 	transform := component_get(&g.player, Transform)
 	physics := component_get(&g.player, Physics)
+	animation := component_get(&g.player, Animation)
 	render := component_get(&g.player, Render)
-	grid := component_get(&g.grid, Grid)
+	collision := component_get(&g.player, Collision)
+	grid_collision := component_get(&g.grid, Collision)
 
-	if transform != nil && physics != nil {
-		move_dir := rl.Vector3{0.0, 0.0, 0.0}
+	move_dir := rl.Vector3{0.0, 0.0, 0.0}
 
-		render.animation_index = 1 // idle
+	animation.index = 1 // idle
 
-		if rl.IsKeyDown(.W) {
-			render.animation_index = 2 // move
-			move_dir.x -= 1
-			move_dir.z -= 1
-		}
-		if rl.IsKeyDown(.S) {
-			render.animation_index = 2 // move
-			move_dir.x += 1
-			move_dir.z += 1
-		}
-		if rl.IsKeyDown(.A) {
-			render.animation_index = 2 // move
-			move_dir.x -= 1
-			move_dir.z += 1
-		}
-		if rl.IsKeyDown(.D) {
-			render.animation_index = 2 // move
-			move_dir.x += 1
-			move_dir.z -= 1
-		}
-
-		if rl.Vector3Length(move_dir) > 0 {
-			move_dir = rl.Vector3Normalize(move_dir)
-
-			target_angle: f32
-			if abs(move_dir.x) < 0.001 && abs(move_dir.z) > 0.001 {
-				// Moving primarily along Z-axis (W+D or A+S)
-				target_angle = move_dir.z > 0 ? -math.PI / 2 : math.PI / 2
-			} else if abs(move_dir.z) < 0.001 && abs(move_dir.x) > 0.001 {
-				// Moving primarily along X-axis (W+A or S+D)
-				target_angle = move_dir.x > 0 ? math.PI / 2 : -math.PI / 2
-			} else {
-				// Diagonal movement
-				target_angle = math.atan2(move_dir.x, move_dir.z)
-			}
-
-			new_rotation := rl.QuaternionFromAxisAngle({0, 1, 0}, target_angle)
-
-			// Apply additional rotation for Z-axis movement
-			if abs(move_dir.x) < 0.001 && abs(move_dir.z) > 0.001 {
-				z_axis_rotation := rl.QuaternionFromAxisAngle({0, 1, 0}, math.PI / 2)
-				new_rotation = new_rotation * z_axis_rotation
-			}
-
-			transform.rotation = new_rotation
-		}
-
-		physics.velocity.x = move_dir.x * physics.move_speed
-		physics.velocity.z = move_dir.z * physics.move_speed
-
-		dt := rl.GetFrameTime()
-		physics.velocity.y -= physics.mass * dt // apply gravity
-
-		new_pos := transform.position + physics.velocity * dt
-
-		player_box := rl.GetModelBoundingBox(render.model)
-		scaled_min := player_box.min * transform.scale_factor
-		scaled_max := player_box.max * transform.scale_factor
-		physics.collider = rl.BoundingBox{
-			min = scaled_min + new_pos,
-			max = scaled_max + new_pos,
-		}
-
-		collision := rl.CheckCollisionBoxes(physics.collider, grid.collider)
-		if collision {
-			if new_pos.y < grid.collider.max.y {
-				new_pos.y = grid.collider.max.y
-				physics.velocity.y = 0
-			}
-
-			new_pos.x = clamp(new_pos.x, grid.collider.min.x, grid.collider.max.x)
-			new_pos.z = clamp(new_pos.z, grid.collider.min.z, grid.collider.max.z)
-		}
-
-		transform.position = new_pos
+	if rl.IsKeyDown(.W) {
+		animation.index = 2 // move
+		move_dir.x -= 1
+		move_dir.z -= 1
 	}
-}
+	if rl.IsKeyDown(.S) {
+		animation.index = 2 // move
+		move_dir.x += 1
+		move_dir.z += 1
+	}
+	if rl.IsKeyDown(.A) {
+		animation.index = 2 // move
+		move_dir.x -= 1
+		move_dir.z += 1
+	}
+	if rl.IsKeyDown(.D) {
+		animation.index = 2 // move
+		move_dir.x += 1
+		move_dir.z -= 1
+	}
 
-clamp :: proc(value, min, max: f32) -> f32 {
-	if value < min do return min
-	if value > max do return max
-	return value
-}
+	if rl.Vector3Length(move_dir) > 0 {
+		move_dir = rl.Vector3Normalize(move_dir)
 
-player_movement_system := PlayerMovementSystem{
-	update = player_movement_system_update,
-	draw = nil,
+		target_angle: f32
+		if abs(move_dir.x) < 0.001 && abs(move_dir.z) > 0.001 {
+			// Moving primarily along Z-axis (W+D or A+S)
+			target_angle = move_dir.z > 0 ? -math.PI / 2 : math.PI / 2
+		} else if abs(move_dir.z) < 0.001 && abs(move_dir.x) > 0.001 {
+			// Moving primarily along X-axis (W+A or S+D)
+			target_angle = move_dir.x > 0 ? math.PI / 2 : -math.PI / 2
+		} else {
+			// Diagonal movement
+			target_angle = math.atan2(move_dir.x, move_dir.z)
+		}
+
+		new_rotation := rl.QuaternionFromAxisAngle({0, 1, 0}, target_angle)
+
+		// Apply additional rotation for Z-axis movement
+		if abs(move_dir.x) < 0.001 && abs(move_dir.z) > 0.001 {
+			z_axis_rotation := rl.QuaternionFromAxisAngle({0, 1, 0}, math.PI / 2)
+			new_rotation = new_rotation * z_axis_rotation
+		}
+
+		transform.rotation = new_rotation
+	}
+
+	physics.velocity.x = move_dir.x * physics.move_speed
+	physics.velocity.z = move_dir.z * physics.move_speed
+
+	dt := rl.GetFrameTime()
+	physics.velocity.y -= physics.mass * dt // apply gravity
+
+	new_pos := transform.position + physics.velocity * dt
+
+	player_box := rl.GetModelBoundingBox(render.model)
+	scaled_min := player_box.min * transform.scale_factor
+	scaled_max := player_box.max * transform.scale_factor
+	collision.bounding_box = rl.BoundingBox{
+		min = scaled_min + new_pos,
+		max = scaled_max + new_pos,
+	}
+
+	has_collision := rl.CheckCollisionBoxes(collision.bounding_box, grid_collision.bounding_box)
+	if has_collision {
+		if new_pos.y < grid_collision.bounding_box.max.y {
+			new_pos.y = grid_collision.bounding_box.max.y
+			physics.velocity.y = 0
+		}
+
+		new_pos.x = math.clamp(new_pos.x, grid_collision.bounding_box.min.x, grid_collision.bounding_box.max.x)
+		new_pos.z = math.clamp(new_pos.z, grid_collision.bounding_box.min.z, grid_collision.bounding_box.max.z)
+	}
+
+	transform.position = new_pos
 }
 
 CameraMovementSystem :: System
+
+camera_movement_system := CameraMovementSystem{
+	update = camera_movement_system_update,
+}
 
 camera_movement_system_update :: proc(w: ^World) {
 	camera := component_get(&g.camera, Camera)
@@ -188,11 +186,12 @@ camera_movement_system_update :: proc(w: ^World) {
 	}
 }
 
-camera_movement_system := CameraMovementSystem{
-	update = camera_movement_system_update,
-}
-
 RenderSystem :: System
+
+render_system := RenderSystem{
+	update = nil,
+	draw = render_system_draw,
+}
 
 render_system_draw :: proc(w: ^World) {
 	for &e in w.entities {
@@ -200,12 +199,13 @@ render_system_draw :: proc(w: ^World) {
 		render := component_get(&e, Render)
 		debug := component_get(&e, DebugRender)
 		physics := component_get(&e, Physics)
+		collision := component_get(&e, Collision)
 		grid := component_get(&e, Grid)
 
 		if grid != nil {
 			rl.DrawGrid(grid.size, 1.0)
 			if debug != nil && debug.enabled {
-				rl.DrawBoundingBox(grid.collider, rl.GREEN)
+				rl.DrawBoundingBox(collision.bounding_box, rl.GREEN)
 			}
 		}
 
@@ -227,13 +227,9 @@ render_system_draw :: proc(w: ^World) {
 				render.color,
 			)
 
-			anim := render.animations[render.animation_index]
-			render.animation_current_frame = (render.animation_current_frame + 1) % u32(anim.frameCount)
-			rl.UpdateModelAnimation(render.model, anim, i32(render.animation_current_frame))
-
 			if debug != nil && debug.enabled {
 				if physics != nil {
-					rl.DrawBoundingBox(physics.collider, rl.RED)
+					rl.DrawBoundingBox(collision.bounding_box, rl.RED)
 				}
 
 				forward := rl.Vector3RotateByQuaternion({0.0, 0.0, 1.0}, transform.rotation)
@@ -252,7 +248,22 @@ render_system_draw :: proc(w: ^World) {
 	}
 }
 
-render_system := RenderSystem{
-	update = nil,
-	draw = render_system_draw,
+AnimationSystem :: System
+
+animation_system := AnimationSystem{
+	update = animation_system_update,
+	draw = nil,
+}
+
+animation_system_update :: proc(w: ^World) {
+	for &e in w.entities {
+		animation := component_get(&e, Animation)
+		render := component_get(&e, Render)
+
+		if animation != nil && render != nil {
+			anim := animation.animations[animation.index]
+			animation.current_frame = (animation.current_frame + 1) % u32(anim.frameCount)
+			rl.UpdateModelAnimation(render.model, anim, i32(animation.current_frame))
+		}
+	}
 }
