@@ -6,6 +6,7 @@ Transform :: struct {
     position: rl.Vector3,
     rotation: rl.Quaternion,
     scale: rl.Vector3,
+	scale_factor: f32,
 }
 
 Physics :: struct {

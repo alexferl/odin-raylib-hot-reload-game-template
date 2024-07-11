@@ -73,12 +73,16 @@ player_movement_system_update :: proc(w: ^World) {
 
 		dt := rl.GetFrameTime()
 		physics.velocity.y -= physics.mass * dt // apply gravity
+
 		new_pos := transform.position + physics.velocity * dt
 
 		player_box := rl.GetModelBoundingBox(render.model)
-		player_box.min = player_box.min + new_pos
-		player_box.max = player_box.max + new_pos
-		physics.collider = player_box
+		scaled_min := player_box.min * transform.scale_factor
+		scaled_max := player_box.max * transform.scale_factor
+		physics.collider = rl.BoundingBox{
+			min = scaled_min + new_pos,
+			max = scaled_max + new_pos,
+		}
 
 		collision := rl.CheckCollisionBoxes(physics.collider, grid.collider)
 		if collision {
@@ -206,13 +210,19 @@ render_system_draw :: proc(w: ^World) {
 		}
 
 		if transform != nil && render != nil {
-			rotation_axis, rotation_angle := rl.QuaternionToAxisAngle(transform.rotation)
+			// for model rotations, e.g.:
+			// 90-degree rotation around the X-axis
+			// (math.PI / 2, 0, 0)
+			rotation := rl.QuaternionFromEuler(0, 0, 0)
+			new_rotation := transform.rotation * rotation
+			rotation_axis, rotation_angle := rl.QuaternionToAxisAngle(new_rotation)
+			rotation_angle_degrees := rl.RAD2DEG * rotation_angle
 
 			rl.DrawModelEx(
 				render.model,
 				transform.position,
 				rotation_axis,
-				rl.RAD2DEG * rotation_angle,
+				rotation_angle_degrees,
 				transform.scale,
 				render.color,
 			)
@@ -226,7 +236,7 @@ render_system_draw :: proc(w: ^World) {
 					rl.DrawBoundingBox(physics.collider, rl.RED)
 				}
 
-				forward := rl.Vector3RotateByQuaternion({0, 0, 1}, transform.rotation)
+				forward := rl.Vector3RotateByQuaternion({0.0, 0.0, 1.0}, transform.rotation)
 				end_point := transform.position + forward * 3.0
 				rl.DrawLine3D(transform.position, end_point, rl.BLUE)
 				rl.DrawModelWiresEx(

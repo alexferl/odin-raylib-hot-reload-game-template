@@ -149,20 +149,28 @@ game_init :: proc() {
 	anims_count : i32 = 0
 	anims := rl.LoadModelAnimations("assets/greenman.glb", &anims_count)
 
-	player_pos := rl.Vector3{0.0, 10.0, 0.0}
 	player := entity_create(&world)
+
+	pos := rl.Vector3{0.0, 10.0, 0.0}
+	scale_factor : f32 = 1.0
+
 	component_add(&player, Transform{
-		position = player_pos,
+		position = pos,
 		rotation = rl.QuaternionFromEuler(0, math.PI, 0),
-		scale = {1.0, 1.0, 1.0},
+		scale = rl.Vector3{1.0, 1.0, 1.0} * scale_factor,
+		scale_factor = scale_factor,
 	})
+
 	player_bounding_box := rl.GetModelBoundingBox(model)
+	scaled_min := player_bounding_box.min * scale_factor
+	scaled_max := player_bounding_box.max * scale_factor
+
 	component_add(&player, Physics{
 		mass = 15.0,
 		move_speed = 10.0,
-		collider =  rl.BoundingBox{
-			player_bounding_box.min + player_pos,
-			player_bounding_box.max + player_pos,
+		collider = rl.BoundingBox{
+			min = scaled_min + pos,
+			max = scaled_max + pos,
 		},
 	})
 	component_add(&player, Render{
