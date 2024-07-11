@@ -154,7 +154,7 @@ game_init :: proc() {
 	component_add(&player, Transform{
 		position = player_pos,
 		rotation = rl.QuaternionFromEuler(0, math.PI, 0),
-		scale = {2.0, 2.0, 2.0},
+		scale = {1.0, 1.0, 1.0},
 	})
 	player_bounding_box := rl.GetModelBoundingBox(model)
 	component_add(&player, Physics{
