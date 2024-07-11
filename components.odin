@@ -53,5 +53,4 @@ Camera :: struct {
 
 Grid :: struct {
 	size: i32,
-	bounding_box: rl.BoundingBox,
 }
