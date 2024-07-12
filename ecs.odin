@@ -2,6 +2,8 @@ package game
 
 DEFAULT_WORLD_NAME := "default"
 
+import "core:reflect"
+
 Seq :: distinct u64
 
 // ------ World ------ \\
@@ -9,13 +11,14 @@ Seq :: distinct u64
 World :: struct {
 	name: string,
 	seq: Seq, // current sequence number
-	entities: [dynamic]Entity,
+	entities: map[typeid][dynamic]rawptr,
 	systems: [dynamic]System,
 }
 
 world_init :: proc(name: string) -> World {
 	return World{
 		name = name,
+		entities = make(map[typeid][dynamic]rawptr),
 	}
 }
 
@@ -36,9 +39,14 @@ world_draw :: proc(w: ^World) {
 }
 
 world_destroy :: proc(w: ^World) {
-	for &e in w.entities {
-		entity_destroy(&e)
+	for _, &type_array in w.entities {
+		for entity in type_array {
+			entity_ptr := cast(^Entity)entity
+			entity_destroy(w, entity_ptr)
+		}
+		delete(type_array)
 	}
+
 	delete(w.entities)
 	delete(w.systems)
 }
@@ -50,22 +58,99 @@ Entity :: struct {
 	components: map[typeid]rawptr,
 }
 
-entity_create :: proc(w: ^World) -> Entity {
-	e := Entity{
-		id = w.seq,
-		components = make(map[typeid]rawptr),
-	}
+entity_create :: proc(w: ^World, $T: typeid, value: ^T) -> T {
 	w.seq += 1
-	append(&w.entities, e)
-	return e
+
+	if w.entities[T] == nil {
+		w.entities[T] = make([dynamic]rawptr)
+	}
+
+	type_info := type_info_of(T)
+	if named_type, is_named := type_info.variant.(reflect.Type_Info_Named); is_named {
+		base_type_info := named_type.base
+		if struct_info, is_struct := base_type_info.variant.(reflect.Type_Info_Struct); is_struct {
+			for name, i in struct_info.names {
+				if name == "entity" {
+					field := struct_info.types[i]
+					if field.id == typeid_of(Entity) {
+						entity_ptr := (^Entity)(uintptr(value) + struct_info.offsets[i])
+						entity_ptr.id = w.seq
+						entity_ptr.components = make(map[typeid]rawptr)
+						break
+					}
+				}
+			}
+		}
+	}
+
+	append(&w.entities[T], value)
+	return value^
 }
 
-entity_destroy :: proc(e: ^Entity) {
-	for k, v in e.components {
-		free(v)
-		delete_key(&e.components, k)
+entity_get :: proc(w: ^World, $T: typeid) -> T {
+	if type_array, exists := w.entities[typeid_of(T)]; exists && len(type_array) > 0 {
+		any_value := any{type_array[0], typeid_of(T)}
+
+		if v, is_type := any_value.(T); is_type {
+			return v
+		}
+
+		if ptr, is_ptr := any_value.(^T); is_ptr {
+			return ptr^
+		}
 	}
-	delete(e.components)
+	return {}
+}
+
+entity_destroy :: proc(w: ^World, entity: ^Entity) {
+	for type_id, &type_array in w.entities {
+		for i := 0; i < len(type_array); i += 1 {
+			if cast(^Entity)type_array[i] == entity {
+				ordered_remove(&type_array, i)
+
+				for _, component in entity.components {
+					free(component)
+				}
+				delete(entity.components)
+
+				free(entity)
+
+				if len(type_array) == 0 {
+					delete(type_array)
+					delete_key(&w.entities, type_id)
+				}
+
+				return
+			}
+		}
+	}
+}
+
+entities_get :: proc(w: ^World, $T: typeid) -> []T {
+	if type_array, exists := w.entities[typeid_of(T)]; exists && len(type_array) > 0 {
+		result := make([]T, len(type_array))
+		for i in 0..<len(type_array) {
+			any_value := any{type_array[i], typeid_of(T)}
+			if v, is_type := any_value.(T); is_type {
+				result[i] = v
+			} else if ptr, is_ptr := any_value.(^T); is_ptr {
+				result[i] = ptr^
+			}
+		}
+		return result
+	}
+	return nil
+}
+
+entities_get_all :: proc(w: ^World) -> [dynamic]^Entity {
+	result := make([dynamic]^Entity)
+	for _, type_array in w.entities {
+		for entity_ptr in type_array {
+			entity := cast(^Entity)entity_ptr
+			append(&result, entity)
+		}
+	}
+	return result
 }
 
 // ------ Component ------ \\

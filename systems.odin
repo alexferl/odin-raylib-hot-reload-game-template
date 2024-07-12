@@ -11,17 +11,21 @@ player_movement_system := PlayerMovementSystem{
 }
 
 player_movement_system_update :: proc(w: ^World) {
-	camera := component_get(&g.camera, Camera)
+	camera_entity := entity_get(w, Camera)
+	camera := component_get(&camera_entity, CameraComponent)
 	if camera.mode == .Free {
 		return
 	}
 
-	transform := component_get(&g.player, Transform)
-	physics := component_get(&g.player, Physics)
-	animation := component_get(&g.player, Animation)
-	render := component_get(&g.player, Render)
-	collision := component_get(&g.player, Collision)
-	grid_collision := component_get(&g.grid, Collision)
+	player := entity_get(w, Player)
+	transform := component_get(&player, TransformComponent)
+	physics := component_get(&player, PhysicsComponent)
+	animation := component_get(&player, AnimationComponent)
+	render := component_get(&player, RenderComponent)
+	collision := component_get(&player, CollisionComponent)
+
+	grid := entity_get(w, Grid)
+	grid_collision := component_get(&grid, CollisionComponent)
 
 	move_dir := rl.Vector3{0.0, 0.0, 0.0}
 
@@ -111,8 +115,11 @@ camera_movement_system := CameraMovementSystem{
 }
 
 camera_movement_system_update :: proc(w: ^World) {
-	camera := component_get(&g.camera, Camera)
-	player := component_get(&g.player, Transform)
+	player_entity := entity_get(w, Player)
+	player := component_get(&player_entity, TransformComponent)
+
+	camera_entity := entity_get(w, Camera)
+	camera := component_get(&camera_entity, CameraComponent)
 
 	if rl.IsKeyPressed(.M) {
 		if camera.mode == .Player {
@@ -194,13 +201,16 @@ render_system := RenderSystem{
 }
 
 render_system_draw :: proc(w: ^World) {
-	for &e in w.entities {
-		transform := component_get(&e, Transform)
-		render := component_get(&e, Render)
-		debug := component_get(&e, DebugRender)
-		physics := component_get(&e, Physics)
-		collision := component_get(&e, Collision)
-		grid := component_get(&e, Grid)
+	entities := entities_get_all(w)
+	defer delete(entities)
+
+	for e in entities {
+		transform := component_get(e, TransformComponent)
+		render := component_get(e, RenderComponent)
+		debug := component_get(e, DebugRenderComponent)
+		physics := component_get(e, PhysicsComponent)
+		collision := component_get(e, CollisionComponent)
+		grid := component_get(e, GridComponent)
 
 		if grid != nil {
 			rl.DrawGrid(grid.size, 1.0)
@@ -256,9 +266,12 @@ animation_system := AnimationSystem{
 }
 
 animation_system_update :: proc(w: ^World) {
-	for &e in w.entities {
-		animation := component_get(&e, Animation)
-		render := component_get(&e, Render)
+	entities := entities_get_all(w)
+	defer delete(entities)
+
+	for e in entities {
+		animation := component_get(e, AnimationComponent)
+		render := component_get(e, RenderComponent)
 
 		if animation != nil && render != nil {
 			anim := animation.animations[animation.index]

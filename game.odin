@@ -20,9 +20,6 @@ DEV :: #config(DEV, false)
 PIXEL_WINDOW_HEIGHT :: 360
 
 Game :: struct {
-	camera: Entity,
-	grid: Entity,
-	player: Entity,
 	world: World,
 }
 
@@ -39,7 +36,8 @@ update :: proc() {
 }
 
 draw :: proc() {
-	camera := component_get(&g.camera, Camera)
+	camera_entity := entity_get(&g.world, Camera)
+	camera := component_get(&camera_entity, CameraComponent)
 
 	rl.BeginDrawing()
 	rl.ClearBackground(rl.RAYWHITE)
@@ -57,8 +55,9 @@ draw :: proc() {
 	{
 		rl.BeginMode2D(ui_camera())
 		{
-			transform := component_get(&g.player, Transform)
-			physics := component_get(&g.player, Physics)
+			player := entity_get(&g.world, Player)
+			transform := component_get(&player, TransformComponent)
+			physics := component_get(&player, PhysicsComponent)
 			text := fmt.ctprintf(
 				"%d FPS\nplayer:\npos: [%.2f, %.2f, %.2f]\nvel: [%.2f, %.2f, %.2f]\ncamera:\nmode: %v (Press M)\npos: [%.2f, %.2f, %.2f]\ntarget: [%.2f, %.2f, %.2f]",
 				rl.GetFPS(),
@@ -128,8 +127,8 @@ game_init :: proc() {
 	world := world_init(DEFAULT_WORLD_NAME)
 
 	// Camera
-	camera := entity_create(&world)
-	component_add(&camera, Camera{
+	camera := entity_create(&world, Camera, new(Camera))
+	component_add(&camera, CameraComponent{
 		camera = rl.Camera{
 			position = {10.0, 10.0, 10.0},
 			target = {0.0, 0.0, 0.0},
@@ -145,18 +144,19 @@ game_init :: proc() {
 	})
 
 	// Player
-	player := entity_create(&world)
+	player := entity_create(&world, Player, new(Player))
+
 	pos := rl.Vector3{0.0, 10.0, 0.0}
 	scale_factor : f32 = 1.0
 
-	component_add(&player, Transform{
+	component_add(&player, TransformComponent{
 		position = pos,
 		rotation = rl.QuaternionFromEuler(0, math.PI, 0),
 		scale = rl.Vector3{1.0, 1.0, 1.0} * scale_factor,
 		scale_factor = scale_factor,
 	})
 
-	component_add(&player, Physics{
+	component_add(&player, PhysicsComponent{
 		mass = 15.0,
 		move_speed = 10.0,
 	})
@@ -168,41 +168,41 @@ game_init :: proc() {
 	player_bounding_box := rl.GetModelBoundingBox(model)
 	scaled_min := player_bounding_box.min * scale_factor
 	scaled_max := player_bounding_box.max * scale_factor
-	component_add(&player, Collision{
+	component_add(&player, CollisionComponent{
 		bounding_box = rl.BoundingBox{
 			min = scaled_min + pos,
 			max = scaled_max + pos,
 		},
 	})
 
-	component_add(&player, Render{
+	component_add(&player, RenderComponent{
 		model = model,
 		color = rl.WHITE,
 	})
-	component_add(&player, DebugRender{enabled = true})
+	component_add(&player, DebugRenderComponent{enabled = true})
 
-	component_add(&player, Animation{
+	component_add(&player, AnimationComponent{
 		animations = anims,
 		count = anims_count,
 		index = 1, // idle
 	})
 
 	// Grid
-	grid := entity_create(&world)
+	grid := entity_create(&world, Grid, new(Grid))
 	grid_size : f32 = 40
 
-	component_add(&grid, Grid{
+	component_add(&grid, GridComponent{
 		size = i32(grid_size),
 	})
 
-	component_add(&grid, Collision{
+	component_add(&grid, CollisionComponent{
 		bounding_box = rl.BoundingBox{
 			rl.Vector3{-grid_size/2, -0.1, -grid_size/2},
 			rl.Vector3{grid_size/2, 0.1, grid_size/2},
 		},
 	})
 
-	component_add(&grid, DebugRender{enabled = true})
+	component_add(&grid, DebugRenderComponent{enabled = true})
 
 	// Systems
 	system_add(&world, player_movement_system)
@@ -211,9 +211,6 @@ game_init :: proc() {
 	system_add(&world, animation_system)
 
 	g^ = Game{
-		camera = camera,
-		grid = grid,
-		player = player,
 		world = world,
 	}
 

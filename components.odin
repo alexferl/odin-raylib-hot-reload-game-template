@@ -2,33 +2,33 @@ package game
 
 import rl "vendor:raylib"
 
-Transform :: struct {
+TransformComponent :: struct {
     position: rl.Vector3,
     rotation: rl.Quaternion,
     scale: rl.Vector3,
 	scale_factor: f32,
 }
 
-Physics :: struct {
+PhysicsComponent :: struct {
     velocity: rl.Vector3,
     mass: f32,
     move_speed: f32,
 }
 
-Collision :: struct {
+CollisionComponent :: struct {
 	bounding_box: rl.BoundingBox,
 }
 
-Render :: struct {
+RenderComponent :: struct {
     color: rl.Color,
 	model: rl.Model,
 }
 
-DebugRender :: struct {
+DebugRenderComponent :: struct {
 	enabled: bool,
 }
 
-Animation :: struct {
+AnimationComponent :: struct {
 	animations: [^]rl.ModelAnimation,
 	count: i32,
 	index: u32,
@@ -40,7 +40,7 @@ CameraMode :: enum {
 	Free,
 }
 
-Camera :: struct {
+CameraComponent :: struct {
 	using camera: rl.Camera,
 	mode: CameraMode,
 	offset: rl.Vector3,
@@ -51,6 +51,6 @@ Camera :: struct {
 	zoom_sensitivity: f32,
 }
 
-Grid :: struct {
+GridComponent :: struct {
 	size: i32,
 }
