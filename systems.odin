@@ -208,7 +208,6 @@ render_system_draw :: proc(w: ^World) {
 		transform := component_get(e, TransformComponent)
 		render := component_get(e, RenderComponent)
 		debug := component_get(e, DebugRenderComponent)
-		physics := component_get(e, PhysicsComponent)
 		collision := component_get(e, CollisionComponent)
 		grid := component_get(e, GridComponent)
 
@@ -238,7 +237,7 @@ render_system_draw :: proc(w: ^World) {
 			)
 
 			if debug != nil && debug.enabled {
-				if physics != nil {
+				if collision != nil {
 					rl.DrawBoundingBox(collision.bounding_box, rl.RED)
 				}
 
