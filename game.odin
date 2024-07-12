@@ -11,7 +11,6 @@
 
 package game
 
-import "core:fmt"
 import "core:math"
 import rl "vendor:raylib"
 
@@ -36,41 +35,10 @@ update :: proc() {
 }
 
 draw :: proc() {
-	camera_entity := entity_get(&g.world, Camera)
-	camera := component_get(&camera_entity, CameraComponent)
-
 	rl.BeginDrawing()
 	rl.ClearBackground(rl.RAYWHITE)
 
-	// 3D mode
-	{
-		rl.BeginMode3D(camera)
-		{
-			world_draw(&g.world)
-		}
-		rl.EndMode3D()
-	}
-
-	// 2D mode
-	{
-		rl.BeginMode2D(ui_camera())
-		{
-			player := entity_get(&g.world, Player)
-			transform := component_get(&player, TransformComponent)
-			physics := component_get(&player, PhysicsComponent)
-			text := fmt.ctprintf(
-				"%d FPS\nplayer:\npos: [%.2f, %.2f, %.2f]\nvel: [%.2f, %.2f, %.2f]\ncamera:\nmode: %v (Press M)\npos: [%.2f, %.2f, %.2f]\ntarget: [%.2f, %.2f, %.2f]",
-				rl.GetFPS(),
-				transform.position.x, transform.position.y, transform.position.z,
-				physics.velocity.x, physics.velocity.y, physics.velocity.z,
-				camera.mode,
-				camera.position.x, camera.position.y, camera.position.z,
-				camera.target.x, camera.target.y, camera.target.z,
-			)
-			rl.DrawText(text, 5, 5, 8, rl.DARKGRAY)
-		}
-		rl.EndMode2D()
-	}
+	world_draw(&g.world)
 
 	rl.EndDrawing()
 }

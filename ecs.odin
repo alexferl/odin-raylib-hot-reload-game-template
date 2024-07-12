@@ -75,7 +75,7 @@ entity_create :: proc(w: ^World, $T: typeid, value: ^T) -> T {
 					if field.id == typeid_of(Entity) {
 						entity_ptr := (^Entity)(uintptr(value) + struct_info.offsets[i])
 						entity_ptr.id = w.seq
-						entity_ptr.components = make(map[typeid]rawptr)
+						entity_ptr.components = make(map[typeid]rawptr, 32)
 						break
 					}
 				}
